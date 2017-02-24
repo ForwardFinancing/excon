@@ -47,6 +47,12 @@ module Excon
         buffer
       rescue Errno::EAGAIN, Errno::EWOULDBLOCK, IO::WaitReadable
         select_with_timeout(@socket, :read) && retry
+      rescue Excon::Error::Socket => error
+        if error.message == 'getaddrinfo: Name or service not known (SocketError)'
+          select_with_timeout(@socket, :read) && retry
+        else
+          raise(error)
+        end
       rescue OpenSSL::SSL::SSLError => error
         if error.message == 'read would block'
           select_with_timeout(@socket, :read) && retry
@@ -169,6 +175,12 @@ module Excon
         else
           raise(error)
         end
+      rescue Excon::Error::Socket => error
+        if error.message == 'getaddrinfo: Name or service not known (SocketError)'
+          select_with_timeout(@socket, :read) && retry
+        else
+          raise(error)
+        end
       rescue Errno::EAGAIN, Errno::EWOULDBLOCK, IO::WaitReadable
         if @read_buffer.empty?
           # if we didn't read anything, try again...
@@ -201,6 +213,12 @@ module Excon
     rescue Errno::EAGAIN, Errno::EWOULDBLOCK, IO::WaitReadable
       if @read_buffer.empty?
         select_with_timeout(@socket, :read) && retry
+      end
+    rescue Excon::Error::Socket => error
+      if error.message == 'getaddrinfo: Name or service not known (SocketError)'
+        select_with_timeout(@socket, :read) && retry
+      else
+        raise(error)
       end
     rescue EOFError
       @eof = true
